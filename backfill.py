@@ -35,6 +35,9 @@ def backfill_month(conn, month: str) -> None:
     start, end = month_window(month)
     print(f"  [{month}] fetching broad sample...")
     broad = fetch_articles(BROAD_QUERY, start, end, BROAD_MAX_RECORDS)
+    if not broad:
+        # Never record an empty month as done — GDELT was likely throttling.
+        raise RuntimeError("no articles returned (GDELT throttled?) — month will be retried")
     print(f"  [{month}] fetching conflict sample...")
     conflict = fetch_articles(CONFLICT_QUERY, start, end, CONFLICT_MAX_RECORDS)
 

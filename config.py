@@ -29,7 +29,7 @@ BACKFILL_START = "2023-01"
 # GDELT etiquette — free DOC API allows ~1 request per 5 seconds.
 # Hammering it triggers a 429 penalty box. Do not lower this.
 # ---------------------------------------------------------------------------
-GDELT_SLEEP_SECONDS = 6
+GDELT_SLEEP_SECONDS = 8
 GDELT_MAX_RETRIES = 4
 
 # ---------------------------------------------------------------------------

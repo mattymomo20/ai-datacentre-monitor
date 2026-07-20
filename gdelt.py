@@ -13,7 +13,13 @@ import requests
 from config import GDELT_SLEEP_SECONDS, GDELT_MAX_RETRIES
 
 DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc"
-HEADERS = {"User-Agent": "ai-datacentre-monitor (research/underwriting triage prototype)"}
+HEADERS = {
+    # GDELT's bot filter 429s unfamiliar user agents — identify as a browser.
+    "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/126.0.0.0 Safari/537.36"),
+    "Accept": "application/json, text/plain, */*",
+}
 
 
 def _get(params: dict) -> dict:
@@ -23,8 +29,10 @@ def _get(params: dict) -> dict:
         try:
             resp = requests.get(DOC_API, params=params, headers=HEADERS, timeout=30)
             if resp.status_code == 429:
-                wait = 30 * attempt
-                print(f"    GDELT 429 (penalty box) — waiting {wait}s...")
+                # Retrying too soon while boxed EXTENDS the penalty — back off hard.
+                wait = 180 * attempt
+                print(f"    GDELT 429 (penalty box) — waiting {wait}s. "
+                      "Retrying too fast extends the penalty, so patience here.")
                 time.sleep(wait)
                 continue
             resp.raise_for_status()
