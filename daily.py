@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from db import connect, insert_articles, record_run, now_iso
 from newsapi import (fetch_articles, BROAD_QUERY_NEWSAPI, CONFLICT_QUERY_NEWSAPI)
+from panel_sources import fetch_window_panel
 from classify import classify_all
 
 DAILY_BROAD_MAX = 100
@@ -32,13 +33,18 @@ def main() -> None:
     broad = fetch_articles(BROAD_QUERY_NEWSAPI, from_date, to_date, DAILY_BROAD_MAX)
     print("Fetching latest conflict sample (NewsAPI)...")
     conflict = fetch_articles(CONFLICT_QUERY_NEWSAPI, from_date, to_date, DAILY_CONFLICT_MAX)
+    print("Fetching latest panel articles (NYT + Guardian)...")
+    panel = fetch_window_panel(from_date, to_date)
 
     for a in broad:
         a.update(month=month, stream="broad")
     for a in conflict:
         a.update(month=month, stream="conflict")
+    for a in panel:
+        a.update(month=month, stream="panel")
 
-    fetched = insert_articles(conn, broad) + insert_articles(conn, conflict)
+    fetched = (insert_articles(conn, broad) + insert_articles(conn, conflict)
+               + insert_articles(conn, panel))
     print(f"{len(broad)} broad + {len(conflict)} conflict fetched, {fetched} new. Classifying...")
     classified = classify_all(conn)
     record_run(conn, "daily", now.strftime("%Y-%m-%d"), fetched, classified,

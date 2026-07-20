@@ -29,6 +29,8 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          NYT_API_KEY: ${{ secrets.NYT_API_KEY }}
+          GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
           PYTHONUNBUFFERED: "1"   # stream prints to the live log immediately
         run: python daily.py
 

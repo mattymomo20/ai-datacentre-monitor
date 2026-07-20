@@ -55,7 +55,11 @@ if df.empty:
     st.stop()
 
 rel = df[df["relevant"] == 1].copy()
-broad = rel[rel["stream"] == "broad"]          # unbiased sample -> stance stats
+# Stance statistics come from the fixed outlet panel (NYT + Guardian) — a
+# consistent measuring instrument across the whole window. Fall back to the
+# NewsAPI broad sample only if the panel backfill hasn't run yet.
+panel = rel[rel["stream"] == "panel"]
+trend = panel if len(panel) else rel[rel["stream"] == "broad"]
 months = sorted(rel["month"].unique())
 
 # ---------------------------------------------------------------------------
@@ -74,8 +78,8 @@ def opp_share(frame) -> float:
 
 recent_months = months[-3:]
 baseline_months = [m for m in months if m.startswith("2023")] or months[:3]
-recent_share = opp_share(broad[broad["month"].isin(recent_months)])
-baseline_share = opp_share(broad[broad["month"].isin(baseline_months)])
+recent_share = opp_share(trend[trend["month"].isin(recent_months)])
+baseline_share = opp_share(trend[trend["month"].isin(baseline_months)])
 recent_adverse = rel[(rel["month"].isin(recent_months)) & (rel["action"].isin(ADVERSE_ACTIONS))]
 
 c1, c2, c3, c4 = st.columns(4)
@@ -85,7 +89,7 @@ c2.metric("Oppositional share (last 3 mo)", f"{recent_share:.0f}%",
           delta_color="inverse")
 c3.metric("Adverse actions (last 3 mo)", len(recent_adverse),
           help="Moratoria, blocked/cancelled projects, lawsuits, protests, restrictions")
-top_theme = (broad[broad["stance"] == "opposed"].explode("themes")["themes"]
+top_theme = (trend[trend["stance"] == "opposed"].explode("themes")["themes"]
              .value_counts().index)
 c4.metric("Top opposition theme", (top_theme[0] if len(top_theme) else "—").replace("_", " "))
 
@@ -95,10 +99,11 @@ st.divider()
 # 1. The story: stance shares over time
 # ---------------------------------------------------------------------------
 st.subheader("The story: stance of coverage over time")
-st.caption("Share of relevant coverage each month, from an unbiased monthly "
-           "sample of global English-language data centre news.")
+st.caption("Share of relevant coverage each month, measured on a fixed panel "
+           "of two quality outlets (NYT + Guardian) — the same instrument "
+           "across the whole window, so months are comparable.")
 
-stance_m = (broad.groupby(["month", "stance"]).size().rename("n").reset_index())
+stance_m = (trend.groupby(["month", "stance"]).size().rename("n").reset_index())
 stance_tot = stance_m.groupby("month")["n"].transform("sum")
 stance_m["share"] = 100 * stance_m["n"] / stance_tot
 fig = px.area(stance_m, x="month", y="share", color="stance",
@@ -139,7 +144,7 @@ if not tl.empty:
 # ---------------------------------------------------------------------------
 st.subheader("What the opposition is about")
 st.caption("Themes present in oppositional coverage, by month.")
-opp = broad[broad["stance"] == "opposed"].explode("themes").dropna(subset=["themes"])
+opp = trend[trend["stance"] == "opposed"].explode("themes").dropna(subset=["themes"])
 if not opp.empty:
     theme_m = opp.groupby(["month", "themes"]).size().rename("n").reset_index()
     fig3 = px.bar(theme_m, x="month", y="n", color="themes",
@@ -221,29 +226,22 @@ with st.expander("Methodology & limitations"):
 centre development, built for underwriting discussion. It measures *coverage*,
 which is a proxy for public and political attitudes — not a direct poll.
 
-**How it works.** Each month (historically) and each day (ongoing), a sample of
-global English-language data centre news is pulled from GDELT. Claude Haiku
-labels each headline against a fixed rubric (stance, themes, concrete actions,
-geography, confidence) at temperature 0. Counts of those labels — not model
-opinion scores — produce every figure above.
+**How it works.** Claude Haiku labels each headline against a fixed rubric
+(stance, themes, concrete actions, geography, confidence) at temperature 0.
+Counts of those labels — not model opinion scores — produce every figure above.
 
-**Two streams.** Stance percentages come only from the *broad* stream (an
-unbiased sample). A second, deliberately biased *conflict* stream (opposition
-keywords) improves detection of adverse events for the hotspot and action
-views, and is never used for stance statistics.
+**Two layers.** The stance trend is measured on a fixed *panel* of two quality
+outlets (New York Times + The Guardian): their complete data centre coverage,
+Jan 2023 → today, the same instrument in every month, so months are genuinely
+comparable. A separate *breadth* layer (NewsAPI, ~150k outlets, daily since
+Jul 2026) widens the net for hotspots, adverse events, and the headline
+explorer, but is never mixed into the panel trend statistics.
 
-**Independent check.** The GDELT volume/tone chart contains no LLM judgement at
-all — if the LLM-classified trend and GDELT's raw tone disagree sharply,
-treat the trend with caution.
-
-**Source seam.** Historical data (2023 → Jul 2026) comes from GDELT's archive;
-ongoing daily data comes from NewsAPI. Both are broad multi-outlet indexes, but
-the source mix differs, so stance shares either side of July 2026 are not
-perfectly comparable — treat the seam with care.
-
-**Limitations.** Headline-only classification; English-language sources only;
-up to 250 broad articles sampled per month (GDELT cap); media coverage may
-lead or lag actual permitting outcomes; no internal, exposure, or policy data
-is used anywhere. Classification model and rubric version are stored with
-every label for auditability.
+**Limitations.** Headline-only classification; English-language sources; the
+panel is two Western outlets (strong on the US and UK/Europe flashpoints,
+thinner on local and non-Western press — the breadth layer partly compensates
+from Jul 2026 onward); media coverage may lead or lag actual permitting
+outcomes; no internal, exposure, or policy data is used anywhere.
+Classification model and rubric version are stored with every label for
+auditability.
     """)

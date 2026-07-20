@@ -15,19 +15,20 @@ lawsuits) have actually happened.
 
 ## How it works — measurement, not opinion
 
-1. **Ingest.** GDELT's DOC API supplies a monthly (historical) and daily
-   (ongoing) sample of global English-language data centre news. Two streams:
-   a *broad* unbiased sample for statistics, and a targeted *conflict* stream
-   used only to catch adverse events.
-2. **Classify.** Claude Haiku labels every headline against a fixed rubric
+1. **Panel (trend instrument).** The complete data centre coverage of two
+   quality outlets — NYT + The Guardian — from Jan 2023 to today, refreshed
+   daily. A fixed panel means every month is measured with the same
+   instrument, so the stance trend is genuinely comparable over time.
+2. **Breadth (event detection).** NewsAPI (~150k outlets) supplies a daily
+   broad sample plus a targeted opposition pull. Used for hotspots, adverse
+   actions, and the headline explorer — never mixed into the panel trend.
+3. **Classify.** Claude Haiku labels every headline against a fixed rubric
    (`classification_rubric.md`): relevance, stance (opposed / supportive /
    neutral), themes, concrete actions, geography, confidence. Temperature 0;
    model + rubric version stored with every label.
-3. **Count.** Every chart is an aggregation of those labels — the tool never
+4. **Count.** Every chart is an aggregation of those labels — the tool never
    asks the model for an opinion score. Every figure drills down to the actual
    headlines behind it.
-4. **Cross-check.** GDELT's own volume and tone timelines (no LLM involved)
-   are shown alongside as an independent reference.
 
 Public news only — no internal, exposure, or policy data anywhere.
 
@@ -48,18 +49,22 @@ commits the updated `coverage.db`.
 
 | File | Purpose |
 |---|---|
-| `config.py` | Queries, fixed label sets, model, constants |
+| `config.py` | Fixed label sets, model, constants |
 | `classification_rubric.md` | The labelling rubric fed to the model |
-| `gdelt.py` | Rate-limited GDELT client (respects 1 req/6s) |
+| `panel_sources.py` | NYT + Guardian clients (the fixed trend panel) |
+| `newsapi.py` | NewsAPI client (the daily breadth layer) |
 | `classify.py` | Batched Haiku classification with validation |
 | `db.py` | SQLite schema and helpers |
-| `backfill.py` | Resumable historical backfill (Jan 2023 →) |
-| `daily.py` | Daily incremental run |
+| `backfill.py` | Resumable historical backfill (Jan 2023 →), runs via Action |
+| `daily.py` | Daily incremental run, runs via Action |
 | `dashboard.py` | Streamlit dashboard |
 | `coverage.db` | SQLite store (committed so the cloud dashboard has data) |
+| `gdelt.py` | Legacy GDELT client (unused — free tier throttling proved unworkable) |
 
 ## Limitations (by design, stated openly)
 
-Headline-only classification; English-language coverage; up to 250 broad
-articles sampled per month (GDELT cap); media coverage is a proxy for
-attitudes, not a poll; coverage may lead or lag permitting outcomes.
+Headline-only classification; English-language coverage; the trend panel is
+two Western outlets (strong on US/UK flashpoints, thinner on local and
+non-Western press — the NewsAPI breadth layer partly compensates from
+Jul 2026 onward); media coverage is a proxy for attitudes, not a poll;
+coverage may lead or lag permitting outcomes.
