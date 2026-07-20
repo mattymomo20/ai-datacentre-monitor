@@ -1,9 +1,7 @@
-name: Daily coverage run
+name: One-off historical backfill
 
 on:
-  schedule:
-    - cron: "0 6 * * *"   # 06:00 UTC daily (free runners can lag up to ~1h)
-  workflow_dispatch: {}     # manual trigger button
+  workflow_dispatch: {}   # manual "Run workflow" button only
 
 permissions:
   contents: write
@@ -13,8 +11,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  run:
+  backfill:
     runs-on: ubuntu-latest
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
 
@@ -25,15 +24,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run daily pull + classification
+      - name: Run backfill (resumable — re-run this workflow if it fails partway)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python daily.py
+        run: python backfill.py
 
-      - name: Commit updated database
+      - name: Commit database
+        if: always()   # keep partial progress even if a month failed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add coverage.db
-          git diff --cached --quiet || git commit -m "Daily coverage: $(date -u +%F)"
+          git diff --cached --quiet || git commit -m "Historical backfill"
           git push
