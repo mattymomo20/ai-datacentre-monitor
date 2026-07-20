@@ -236,6 +236,11 @@ views, and is never used for stance statistics.
 all — if the LLM-classified trend and GDELT's raw tone disagree sharply,
 treat the trend with caution.
 
+**Source seam.** Historical data (2023 → Jul 2026) comes from GDELT's archive;
+ongoing daily data comes from NewsAPI. Both are broad multi-outlet indexes, but
+the source mix differs, so stance shares either side of July 2026 are not
+perfectly comparable — treat the seam with care.
+
 **Limitations.** Headline-only classification; English-language sources only;
 up to 250 broad articles sampled per month (GDELT cap); media coverage may
 lead or lag actual permitting outcomes; no internal, exposure, or policy data

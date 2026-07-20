@@ -28,6 +28,7 @@ jobs:
       - name: Run daily pull + classification
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
           PYTHONUNBUFFERED: "1"   # stream prints to the live log immediately
         run: python daily.py
 
