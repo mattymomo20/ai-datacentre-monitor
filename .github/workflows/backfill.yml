@@ -27,6 +27,7 @@ jobs:
       - name: Run backfill (resumable — re-run this workflow if it fails partway)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PYTHONUNBUFFERED: "1"   # stream prints to the live log immediately
         run: python backfill.py
 
       - name: Commit database
