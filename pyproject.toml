@@ -1,0 +1,13 @@
+[project]
+name = "ai-datacentre-monitor"
+version = "0.1.0"
+description = "Tracks how public and political attitudes toward AI data centre development are shifting, from classified public news coverage."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic",
+    "python-dotenv",
+    "requests",
+    "pandas",
+    "plotly",
+    "streamlit",
+]
