@@ -103,9 +103,13 @@ st.caption("Share of relevant coverage each month, measured on a fixed panel "
            "of two quality outlets (NYT + Guardian) — the same instrument "
            "across the whole window, so months are comparable.")
 
-stance_m = (trend.groupby(["month", "stance"]).size().rename("n").reset_index())
-stance_tot = stance_m.groupby("month")["n"].transform("sum")
-stance_m["share"] = 100 * stance_m["n"] / stance_tot
+# counts per month x stance, smoothed over a 3-month window so thin early
+# months (a handful of articles) don't produce jagged noise
+counts = (trend.groupby(["month", "stance"]).size().unstack(fill_value=0)
+          .reindex(columns=["opposed", "neutral", "supportive"], fill_value=0)
+          .sort_index().rolling(3, min_periods=1).mean())
+shares = counts.div(counts.sum(axis=1), axis=0).mul(100).reset_index()
+stance_m = shares.melt(id_vars="month", var_name="stance", value_name="share")
 fig = px.area(stance_m, x="month", y="share", color="stance",
               color_discrete_map=STANCE_COLORS,
               category_orders={"stance": ["opposed", "neutral", "supportive"]},

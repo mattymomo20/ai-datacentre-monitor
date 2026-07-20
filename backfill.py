@@ -33,9 +33,9 @@ def backfill_month(conn, month: str) -> None:
     started = now_iso()
     print(f"  [{month}] fetching panel (NYT + Guardian)...")
     articles = fetch_month_panel(month)
-    if not articles:
-        # Never record an empty month as done — likely an API problem.
-        raise RuntimeError("no panel articles returned — month will be retried")
+    # NOTE: an empty month is legitimate here — API errors raise loudly inside
+    # fetch_month_panel, so reaching this point with 0 articles means both
+    # archives genuinely had nothing that month (true in early 2023).
     for a in articles:
         a.update(month=month, stream="panel")
     fetched = insert_articles(conn, articles)

@@ -21,9 +21,8 @@ load_dotenv()
 NYT_URL = "https://api.nytimes.com/svc/search/v2/articlesearch.json"
 GUARDIAN_URL = "https://content.guardianapis.com/search"
 
-# Lucene syntax: terms inside parens are OR'd within the field
-NYT_FQ = ('headline:("data center" "data centre" "datacenter") '
-          'OR body:("data center" "data centre" "datacenter")')
+# NYT's current API ignores fielded fq filters — a plain quoted-phrase q works.
+NYT_Q = '"data center"'
 GUARDIAN_Q = '"data centre" OR "data center" OR "datacenter"'
 
 NYT_SLEEP = 12
@@ -55,7 +54,7 @@ def fetch_nyt(from_ymd: str, to_ymd: str) -> list[dict]:
     out = []
     for page in range(NYT_MAX_PAGES):
         data = _get(NYT_URL, {
-            "fq": NYT_FQ,
+            "q": NYT_Q,
             "begin_date": from_ymd,
             "end_date": to_ymd,
             "sort": "oldest",
