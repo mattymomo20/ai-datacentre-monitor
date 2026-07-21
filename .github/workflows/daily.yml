@@ -2,7 +2,8 @@ name: Daily coverage run
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # 06:00 UTC daily (free runners can lag up to ~1h)
+    - cron: "0 5 * * *"    # 05:00 UTC — even with GitHub's ~1h scheduler lag,
+    - cron: "30 6 * * *"   # plus a 06:30 UTC catch-up, data is fresh before 8am UK
   workflow_dispatch: {}     # manual trigger button
 
 permissions:
