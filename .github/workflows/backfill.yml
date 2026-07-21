@@ -38,5 +38,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add coverage.db
-          git diff --cached --quiet || git commit -m "Historical backfill"
-          git push
+          git diff --cached --quiet && { echo "no changes"; exit 0; }
+          git commit -m "Historical backfill"
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "push rejected — pulling and retrying ($i)..."
+            git pull --rebase -X ours origin main
+            sleep 5
+          done
+          echo "push failed after retries"; exit 1
